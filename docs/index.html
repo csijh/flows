@@ -65,10 +65,10 @@ explicit error handling.</li>
 
 <h2>Normalizing</h2>
 
-<p>The <code>flows.mjs</code> library contains a <code>normalize</code>
-function which validates and normalizes the URL in the request. Here's a
-<code>norm.mjs</code> program to try it out without creating a server. It is
-assumed that <code>flows.mjs</code> is in the same directory:</p>
+<p>The <code>flows.mjs</code> library contains a <code>normalize</code> function
+which validates and normalizes the URL in the request. Here's a program, say
+<code>norm.mjs</code>, to try it out without creating a server. It is assumed
+that <code>flows.mjs</code> is in the same directory:</p>
 
 <pre>import flows from "./flows.mjs";
 
@@ -82,28 +82,28 @@ console.log("request =", request);
 console.log("response =", response);
 </pre>
 
-<p>The program uses standard JavaScript modules rather than node's own module
-conventions, and currently must be run with the
+<p>The program uses standard JavaScript modules. Using <a
+href="https://nodejs.org/en/">node</a> version 10, it must be run with the
 <code>--experimental-modules</code> option:</p>
 
-<pre>&gt; node --experimental-modules norm.mjs
+<pre><b>node --experimental-modules norm.mjs</b>
 request = { url: '/products/dogs.html', parameters: { x: '1', 'y': '2' } }
 reponse = {}
 </pre>
 
 <p>The <code>normalize</code> fucntion takes one argument, which is the name of
-the default index file in a directory, top be added to a URL ending with the
-<code>/</code> character. It returns a component, in this case called
-<code>go</code>. The <code>go</code> component is an ordinary function. It is
+the default index file in a directory, to be added to a URL ending with the
+<code>/</code> character. It returns a component, called <code>go</code> in the
+program above. The <code>go</code> component is an ordinary function. It can be
 demonstrated by passing it a request object with a <code>url</code> field which
 the component updates. The parameters are taken off the URL, pulled apart and
 put into a <code>request.parameters</code> object, and then the URL is tidied up
 so that it becomes suitable for use as a file path, for example. In the process,
-some basic URL validation is done to guard against security attacks:</p>
+some basic URL security validation is done to guard against attacks:</p>
 
 <pre>let request = { url: "/products/../../secret.txt" };
 ...
-&gt; node --experimental-modules norm.mjs
+<b>node --experimental-modules norm.mjs</b>
 request = { url: '/../secret.txt' }
 response = { status: 400,
   message: 'Url refers to a file outside of the site' }
@@ -122,7 +122,7 @@ objects at each step.</p>
 <h2>Reading and writing files</h2>
 
 <p>The <code>read</code> function from <code>flows.mjs</code> can be illustrated
-with this <code>read.mjs</code> program:</p>
+with this program:</p>
 
 <pre>import { read } from "./flows.mjs";
 
@@ -139,7 +139,7 @@ go({}, {});
 <p>This illustrates that items can be imported from <code>flows.mjs</code>
 individually, so they can be used without a prefix. The <code>read</code>
 function takes one argument, a file path, and returns a component for reading
-the file. The component, called <code>fn</code> above, has to be called using
+that file. The component, called <code>fn</code> above, has to be called using
 <code>await</code>, because it involves asynchronous I/O, otherwise the response
 would be printed out before the file was read in. And the call has to be wrapped
 in a function which is marked as <code>async</code>, because it contains
@@ -148,14 +148,14 @@ in a function which is marked as <code>async</code>, because it contains
 
 <p>The <code>read</code> function accepts file paths containing parameters which
 refer to fields of the request object. For example,
-<code>read("/.files{url}")</code> indicates the <code>request.url</code> should
+<code>read("./files{url}")</code> indicates the <code>request.url</code> should
 be appended to <code>./files</code> to form the full file path. This allows
-<code>read</code> to use file paths which are partly or wholly calculated during
+<code>read</code> to use file paths which are partly or wholly calculated by
 previous components.</p>
 
 <p>There is a <code>write</code> component which takes a file path and writes
 <code>response.data</code> to the given file. It too accepts parameters
-representing request fioelds.</p>
+representing request fields.</p>
 
 <h2>Combining components</h2>
 
@@ -172,7 +172,7 @@ go({}, {});
 <code>go</code> is built by combining two other components in a chain. The
 <code>chain</code> function combines any number of components in sequence. The
 <code>log</code> component makes testing more convenient by including logging in
-the component sequence, avoding the need for explicit use of
+the component sequence, avoiding the need for explicit use of
 <code>await</code>.</p>
 
 <p>When <code>go</code> is called, the effect is to call the components in the
@@ -184,10 +184,10 @@ for it to finish.</p>
 
 <h2>Error handling</h2>
 
-<p>Here's an example program <code>cat.mjs</code> which reads in two files,
-concatenates them, and writes the result to a third file:</p>
+<p>Here's an example program which reads in two files, concatenates them, and
+writes the result to a third file:</p>
 
-<pre>import { read, write, chain, log } from "./flows.mjs";
+<pre>import { chain, read, write, log } from "./flows.mjs";
 
 let go = chain(read("a.txt"), read("b.txt"), write("c.txt"), log);
 
@@ -245,8 +245,10 @@ the response. It takes one argument which is a map object with a
 
 <pre>import { normalize, log, chain, type } from "./flows.mjs";
 
-let map = { html: "text/html" };
-map.getType = function(ext) { return this[ext]; }
+let map = {
+    html: "text/html",
+    getType: function(ext) { return this[ext]; }
+};
 
 let go = chain(normalize, type(map), log);
 
@@ -281,19 +283,18 @@ methods:</p>
 let request = {};
 let response = {
     status: 200, data: "xyz", type: "text/plain",
-    writeHead, write, end
+    writeHead: function (status, head) { console.log("head", status, head); },
+    write: function (data) { console.log("data", data); },
+    end: function () { console.log("sending response"); }
 };
-function writeHead(status, head) { console.log("writing head", status, head); }
-function write(data) { console.log("writing data", data); }
-function end() { console.log("sending response"); }
 
 deliver(request, response);
 </pre>
 
 <h2>A complete server</h2>
 
-<p>A complete static server can be defined using the components described so
-far:</p>
+<p>A complete minimal static server can be defined using the components
+described so far:</p>
 
 <pre>import http from "http";
 import map from "mime/lite";

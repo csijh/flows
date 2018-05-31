@@ -123,13 +123,13 @@ function parameters(request) {
 export function read(name) {
     async function readComponent(request, response) {
         if (response.status != undefined && response.status != 200) return;
-        if (response.data == undefined) response.data = "";
         let file = name;
         if (file.indexOf('{') >= 0) file = replaceField(file, request);
         try {
             response.status = 200;
             let content = await fs.readFile(file);
-            response.data += content;
+            if (response.data == undefined) response.data = content;
+            else response.data += content;
         }
         catch (err) {
             response.status = 404;

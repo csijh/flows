@@ -203,6 +203,81 @@ write are bypassed, and the error is reported at the end. Most ordinary
 components pass on an error rather than taking any action, so that a single
 pipeline of components can handle all cases.</p>
 
+<h2>Content type</h2>
+
+<p>The <code>type</code> function deals with finding the right content type for
+the response. It takes one argument which is a map object with a
+<code>getType</code> method. It returns a component that sets the
+<code>response.type</code> field. For example:</p>
+
+<pre>import { normalize, log, chain, type } from "./flows.mjs";
+
+let map = {
+    html: "text/html",
+    getType: function(ext) { return this[ext]; }
+};
+
+let go = chain(normalize, type(map), log);
+
+go({ url: "/products/dogs.html?x=1&amp;y=2" }, {});
+</pre>
+
+<p>A map object with a single entry is used to illustrate the function. In a
+real web server, an extensive map is usually needed, e.g. by installing the
+<code>mime</code> module with <code>npm install mime</code> and importing it
+with:</p>
+
+<pre>import map from "mime/lite";
+</pre>
+
+<p>The <code>type</code> component does nothing if the
+<code>response.type</code> field is already set. If a status other than 200 (OK)
+has been set, the error message is used as the response data and the type is set
+to <code>"text/plain"</code>. If the type for the <code>html</code> extension is
+<code>"application/xhtml+xml"</code> then content negotiation is used to check
+that the type is accepted by the client, otherwise the type is changed to
+<code>"text/html"</code>.</p>
+
+<h2>Delivery</h2>
+
+<p>The <code>deliver</code> component sends the response back to the client. To
+demonstrate it without building a server, a response object has to be provided
+with <code>writeHeader</code>, <code>write</code> and <code>end</code>
+methods:</p>
+
+<pre>import { deliver } from "./flows.mjs";
+
+let request = {};
+let response = {
+    status: 200, data: "xyz", type: "text/plain",
+    writeHead: function (status, head) { console.log("head", status, head); },
+    write: function (data) { console.log("data", data); },
+    end: function () { console.log("sending response"); }
+};
+
+deliver(request, response);
+</pre>
+
+<h2>A complete static server</h2>
+
+<p>A complete minimal static server can be defined using the components
+described so far:</p>
+
+<pre>import http from "http";
+import map from "mime/lite";
+import { chain, normalize, read, type, deliver, log } from "./flows.mjs";
+
+let handle = chain(
+    normalize("index.html"),
+    read("./files{url}"),
+    type(map),
+    deliver
+);
+
+let service = http.createServer(handle);
+service.listen(8080, "localhost");
+</pre>
+
 <h2>Making choices</h2>
 
 <p>The <code>choose</code> function is used to make decisions:</p>
@@ -240,81 +315,6 @@ can also be preceded by a request method, e.g. <code>"GET /admin/*"</code>, to
 match only requests with that method. The method name can be upper or lower
 case.</p>
 
-<h2>Content type</h2>
-
-<p>The <code>type</code> function deals with finding the right content type for
-the response. It takes one argument which is a map object with a
-<code>getType</code> method. It returns a component that sets the
-<code>response.type</code> field. For example:</p>
-
-<pre>import { normalize, log, chain, type } from "./flows.mjs";
-
-let map = {
-    html: "text/html",
-    getType: function(ext) { return this[ext]; }
-};
-
-let go = chain(normalize, type(map), log);
-
-go({ url: "/products/dogs.html?x=1&amp;y=2" }, {});
-</pre>
-
-<p>A map object with a single entry is used to illustrate the function. In a
-real web server, an extensive map is usually needed, e.g. by installing the
-<code>mime</code> module with <code>npm install mime</code> and importing it
-with:</p>
-
-<pre>import map from "mime/lite";
-</pre>
-
-<p>The <code>type</code> component does nothing if the
-<code>response.type</code> field is already set. If a status other than 200 (OK)
-has been set, the error message is used as the response data and the type is set
-to <code>"text/plain"</code>. If the type for <code>.html</code> is
-<code>"application/xhtml+xml"</code> then content negotiation is used to check
-that the type is accepted by the client, otherwise the type is changed to
-<code>"text/html"</code>.</p>
-
-<h2>Delivery</h2>
-
-<p>The <code>deliver</code> component sends the response back to the client. To
-demonstrate it without building a server, a response object has to be provided
-with <code>writeHeader</code>, <code>write</code> and <code>end</code>
-methods:</p>
-
-<pre>import { deliver } from "./flows.mjs";
-
-let request = {};
-let response = {
-    status: 200, data: "xyz", type: "text/plain",
-    writeHead: function (status, head) { console.log("head", status, head); },
-    write: function (data) { console.log("data", data); },
-    end: function () { console.log("sending response"); }
-};
-
-deliver(request, response);
-</pre>
-
-<h2>A complete server</h2>
-
-<p>A complete minimal static server can be defined using the components
-described so far:</p>
-
-<pre>import http from "http";
-import map from "mime/lite";
-import { chain, normalize, read, type, deliver, log } from "./flows.mjs";
-
-let handle = chain(
-    normalize("index.html"),
-    read("./files{url}"),
-    type(map),
-    deliver
-);
-
-let service = http.createServer(handle);
-service.listen(8080, "localhost");
-</pre>
-
 <h2>Future components</h2>
 
 <p>These could include components to:</p>
@@ -333,7 +333,7 @@ service.listen(8080, "localhost");
 
 <li>check authorisation.</li>
 
-<li>rewrite the url so that the first part becmoes a template page and later
+<li>rewrite the url so that the first part becomes a template page and later
 parts become parameters</li>
 
 <li>arrange to call a specific handler</li>

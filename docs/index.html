@@ -11,7 +11,7 @@
   addEventListener('load', highlight);
   function highlight() {
     var pres = document.querySelectorAll("pre");
-    for (var i =0; i &lt; pres.length; i++) hljs.highlightBlock(pres[i]);
+    for (var i =0; i < pres.length; i++) hljs.highlightBlock(pres[i]);
   }
 </script>
 <style>
@@ -31,14 +31,18 @@ potential problems with such servers. First, they are based on callbacks, which
 can make them difficult to understanding or test. Second, the design of their
 components is often obscure, with complex hidden code and many options. This may
 be suitable for non-programmers or programmers who don't want to be bothered
-with how things work, but is less helpful for serious learners.</p>
+with how things work, but it is less helpful for serious learners.</p>
+
+<p class="indent"><a
+href="https://raw.githubusercontent.com/csijh/flows/master/flows.mjs"
+>flows.mjs</a></p>
 
 <p>A <span class="key">flows</span> web server is built out of components. The
 aim is to make it easy to understand, adapt, write, combine and test components.
 Here's a quick summary of the conventions for components:</p>
 
 <ul>
-<li>a component is a function, usually an <code>async</code> function</li>
+<li>a component is a function, often an <code>async</code> function</li>
 <li>it takes <code>request</code> and <code>response</code> objects as arguments</li>
 <li>it returns nothing (except a confirmation of completion if <code>async</code>)</li>
 <li>it makes changes to the <code>request</code> and <code>response</code> objects</li>
@@ -53,7 +57,7 @@ are:</p>
 <li> there are no callback arguments, making components self-contained and
 cleanly composable</li>
 
-<li>components are small, simple and easy to understood or adapt</li>
+<li>components are small, simple and easy to understand or adapt</li>
 
 <li>the entire state of processing is visible on the request and response
 objects so that it easy to track</li>
@@ -106,7 +110,7 @@ some basic URL security validation is done to guard against attacks:</p>
 <b>node --experimental-modules norm.mjs</b>
 request = { url: '/../secret.txt' }
 response = { status: 400,
-  message: 'Url refers to a file outside of the site' }
+  message: 'Url goes outside of the site' }
 </pre>
 
 <p>The validation error is recorded in the response object, which will cause
@@ -148,7 +152,7 @@ in a function which is marked as <code>async</code>, because it contains
 
 <p>The <code>read</code> function accepts file paths containing parameters which
 refer to fields of the request object. For example,
-<code>read("./files{url}")</code> indicates the <code>request.url</code> should
+<code>read("./files{url}")</code> indicates that <code>request.url</code> should
 be appended to <code>./files</code> to form the full file path. This allows
 <code>read</code> to use file paths which are partly or wholly calculated by
 previous components.</p>

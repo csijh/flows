@@ -76,7 +76,7 @@ that <code>flows.mjs</code> is in the same directory:</p>
 
 <pre>import flows from "./flows.mjs";
 
-let request = { url: "//products/././pets/../dogs.html?x=1&amp;y=2" };
+let request = { url: "//admin/././manage/../form.html?x=1&amp;y=2" };
 let response = {};
 
 let go = flows.normalize("index.html");
@@ -91,7 +91,7 @@ href="https://nodejs.org/en/">node</a> version 10, it must be run with the
 <code>--experimental-modules</code> option:</p>
 
 <pre><b>node --experimental-modules norm.mjs</b>
-request = { url: '/products/dogs.html', parameters: { x: '1', 'y': '2' } }
+request = { url: '/admin/form.html', parameters: { x: '1', 'y': '2' } }
 reponse = {}
 </pre>
 
@@ -130,10 +130,10 @@ with this program:</p>
 
 <pre>import { read } from "./flows.mjs";
 
-let fn = read("a.txt");
+let component = read("a.txt");
 
 async function go(request, response) {
-    await fn(request, response);
+    await component(request, response);
     console.log(response);
 }
 
@@ -143,12 +143,12 @@ go({}, {});
 <p>This illustrates that items can be imported from <code>flows.mjs</code>
 individually, so they can be used without a prefix. The <code>read</code>
 function takes one argument, a file path, and returns a component for reading
-that file. The component, called <code>fn</code> above, has to be called using
-<code>await</code>, because it involves asynchronous I/O, otherwise the response
-would be printed out before the file was read in. And the call has to be wrapped
-in a function which is marked as <code>async</code>, because it contains
-<code>await</code>. The content of the file is stored in
-<code>response.data</code>, or appended to it if it already exists.</p>
+that file. The component has to be called using <code>await</code>, because it
+involves asynchronous I/O, otherwise the response would be printed out before
+the file was read in. And the call has to be wrapped in a function which is
+marked as <code>async</code>, because it contains <code>await</code>. The
+content of the file is stored in <code>response.data</code>, or appended to it
+if it already exists.</p>
 
 <p>The <code>read</code> function accepts file paths containing parameters which
 refer to fields of the request object. For example,
@@ -157,8 +157,8 @@ be appended to <code>./files</code> to form the full file path. This allows
 <code>read</code> to use file paths which are partly or wholly calculated by
 previous components.</p>
 
-<p>There is a <code>write</code> component which takes a file path and writes
-<code>response.data</code> to the given file. It too accepts parameters
+<p>There is also a <code>write</code> component which takes a file path and
+writes <code>response.data</code> to the given file. It too accepts parameters
 representing request fields.</p>
 
 <h2>Combining components</h2>
@@ -199,7 +199,7 @@ go({}, {});
 </pre>
 
 <p>If the first file <code>a.txt</code> doesn't exist, the second read and the
-write are bypassed, and the error is reported at the end. Most ordinary
+write are bypassed, and the error is reported at the end. Many ordinary
 components pass on an error rather than taking any action, so that a single
 pipeline of components can handle all cases.</p>
 
@@ -210,7 +210,8 @@ the response. It takes one argument which is a map object with a
 <code>getType</code> method. The <code>getType</code> method takes a file
 extension such as <code>"html"</code> and returns the corresponding content
 type. The <code>type</code> function returns a component that sets the
-<code>response.type</code> field. For example:</p>
+<code>response.type</code> field from the extension at the end of the URL. For
+example:</p>
 
 <pre>import { normalize, log, chain, type } from "./flows.mjs";
 
@@ -235,7 +236,7 @@ content types. One possibility is to install the <code>mime</code> module with
 <p>The <code>type</code> component does nothing if the
 <code>response.type</code> field is already set. If a status other than 200 (OK)
 has been set, the error message is used as the response data and the type is set
-to <code>"text/plain"</code>. If the type for the <code>html</code> extension is
+to <code>"text/plain"</code>. If the type for the <code>"html"</code> extension is
 <code>"application/xhtml+xml"</code> then content negotiation is used to check
 that the type is accepted by the client, otherwise the type is changed to
 <code>"text/html"</code>.</p>
@@ -243,7 +244,7 @@ that the type is accepted by the client, otherwise the type is changed to
 <h2>Delivery</h2>
 
 <p>The <code>deliver</code> component sends the response back to the client. To
-demonstrate it without building a server, a response object is provided with
+demonstrate it without building a server, a response object can be provided with
 <code>writeHeader</code>, <code>write</code> and <code>end</code> methods:</p>
 
 <pre>import { deliver } from "./flows.mjs";
@@ -278,6 +279,9 @@ let handle = chain(
 let service = http.createServer(handle);
 service.listen(8080, "localhost");
 </pre>
+
+<p>This assumes that the site files are held in a subdirectory
+<code>files</code> of the directory in which the server is started up.</p>
 
 <h2>Making choices</h2>
 
@@ -329,6 +333,8 @@ name can be upper or lower case.</p>
 <li>read the body of a put request, and store it as a file</li>
 
 <li>tell the browser to redirect</li>
+
+<li>upload a file</li>
 
 <li>use cookies to manage sessions, redirecting to a login page if necessary</li>
 

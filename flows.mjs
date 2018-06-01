@@ -37,11 +37,17 @@ export function choose() {
 function unpack(args, methods, prefixes, suffixes, components) {
     for (let i = 0; i < args.length; i = i + 2) {
         let pattern = args[i];
-        let space = pattern.indexOf(' ');
-        if (space < 0) methods.push(undefined);
+        if (pattern[0] == '/') methods.push(undefined);
         else {
-            methods.push(pattern.slice(0, space).toUpperCase);
-            pattern = pattern.slice(space + 1);
+            let space = pattern.indexOf(' ');
+            if (space < 0) {
+                methods.push(pattern);
+                pattern = "*";
+            }
+            else {
+                methods.push(pattern.slice(0, space).toUpperCase);
+                pattern = pattern.slice(space + 1);
+            }
         }
         let star = pattern.indexOf('*')
         if (star < 0) { prefixes.push(pattern); suffixes.push(""); }

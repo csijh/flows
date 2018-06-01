@@ -98,12 +98,12 @@ reponse = {}
 <p>The <code>normalize</code> fucntion takes one argument, which is the name of
 the default index file in a directory, to be added to a URL ending with the
 <code>/</code> character. It returns a component, called <code>go</code> in the
-program above. The <code>go</code> component is an ordinary function. It can be
+program above. The <code>go</code> component is an ordinary function. It is
 demonstrated by passing it a request object with a <code>url</code> field which
-the component updates. The parameters are taken off the URL, pulled apart and
-put into a <code>request.parameters</code> object, and then the URL is tidied up
-so that it becomes suitable for use as a file path, for example. In the process,
-some basic URL security validation is done to guard against attacks:</p>
+it updates. The parameters are taken off the URL, pulled apart and put into a
+<code>request.parameters</code> object, and then the URL is tidied up so that it
+becomes suitable for use as a file path, for example. In the process, some basic
+URL security validation is done to guard against attacks:</p>
 
 <pre>let request = { url: "/products/../../secret.txt" };
 ...
@@ -207,7 +207,9 @@ pipeline of components can handle all cases.</p>
 
 <p>The <code>type</code> function deals with finding the right content type for
 the response. It takes one argument which is a map object with a
-<code>getType</code> method. It returns a component that sets the
+<code>getType</code> method. The <code>getType</code> method takes a file
+extension such as <code>"html"</code> and returns the corresponding content
+type. The <code>type</code> function returns a component that sets the
 <code>response.type</code> field. For example:</p>
 
 <pre>import { normalize, log, chain, type } from "./flows.mjs";
@@ -223,9 +225,9 @@ go({ url: "/products/dogs.html?x=1&amp;y=2" }, {});
 </pre>
 
 <p>A map object with a single entry is used to illustrate the function. In a
-real web server, an extensive map is usually needed, e.g. by installing the
-<code>mime</code> module with <code>npm install mime</code> and importing it
-with:</p>
+real web server, an extensive map is usually needed covering a wide range of
+content types. One possibility is to install the <code>mime</code> module with
+<code>npm install mime</code> and import it with:</p>
 
 <pre>import map from "mime/lite";
 </pre>
@@ -241,9 +243,8 @@ that the type is accepted by the client, otherwise the type is changed to
 <h2>Delivery</h2>
 
 <p>The <code>deliver</code> component sends the response back to the client. To
-demonstrate it without building a server, a response object has to be provided
-with <code>writeHeader</code>, <code>write</code> and <code>end</code>
-methods:</p>
+demonstrate it without building a server, a response object is provided with
+<code>writeHeader</code>, <code>write</code> and <code>end</code> methods:</p>
 
 <pre>import { deliver } from "./flows.mjs";
 
@@ -258,7 +259,7 @@ let response = {
 deliver(request, response);
 </pre>
 
-<h2>A complete static server</h2>
+<h2>A complete server</h2>
 
 <p>A complete minimal static server can be defined using the components
 described so far:</p>
@@ -309,11 +310,11 @@ matches:</p>
 <pre>let go = choose("/admin/*", login, "/do/*", act, display);
 </pre>
 
-<p>A URL pattern must contain a single asterisk, representing arbitrary text. It
-can thus pick out specific prefixes, or specific suffixes, or both. The pattern
-can also be preceded by a request method, e.g. <code>"GET /admin/*"</code>, to
-match only requests with that method. The method name can be upper or lower
-case.</p>
+<p>A URL pattern can be an exact URL, or can contain a single asterisk,
+representing arbitrary text. It can thus pick out specific prefixes, or specific
+suffixes, or both. The pattern can also be preceded by a request method, e.g.
+<code>"GET /admin/*"</code>, to match only requests with that method. The method
+name can be upper or lower case.</p>
 
 <h2>Future components</h2>
 

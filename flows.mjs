@@ -15,50 +15,44 @@ export function chain() {
 
 // Decide between components.
 export function choose() {
-    let args = arguments;
-    if (args.length < 2) throw "choose needs at least two arguments";
-    async function chooseC(request, response) {
-        while (args.length >= 2) {
-            let pattern = args[0];
-            let component = args[1];
-            Array.prototype.shift.call(args);
-            Array.prototype.shift.call(args);
-            if (! match(pattern, request)) continue;
-            await component(request, response);
+    let methods = [], prefixes = [], suffixes = [], components = [];
+    let otherwise = undefined;
+    otherwise = unpack(arguments, methods, prefixes, suffixes, components);
+    async function chooseComponent(request, response) {
+        for (let i = 0; i < prefixes.length; i++) {
+            if (methods[i] && request.method != methods[i]) continue;
+            if (! request.url.startsWith(prefixes[i])) continue;
+            if (! request.url.endsWith(suffixes[i])) continue;
+            await components[i](request, response);
             return;
         }
-        if (args.length == 1) await args[0](request, response);
+        if (otherwise != undefined) await otherwise(request, response);
     }
-    return chooseC;
+    return chooseComponent;
 }
 
-// The three common and six uncommon request methods.
-const methods = [
-    "GET", "POST", "PUT",
-    "HEAD", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"
-];
-
-// Check request against pattern.
-function match(pattern, request) {
-    if (typeof pattern != "string") throw "Error: expecting string";
-    let parts = pattern.split(' ');
-    if (parts.length > 2) throw "Error: space in URL pattern";
-    if (parts.length == 2) {
-        let m = parts[0].toUpperCase();
-        if (methods.indexOf(m) < 0) {
-            throw "Error: method pattern should be GET, POST or PUT";
+// Take 'choose' arguments, split the patterns into the methods, prefixes and
+// suffixes lists, put the corresponding components in the components list, and
+// return the default component, if any.
+function unpack(args, methods, prefixes, suffixes, components) {
+    for (let i = 0; i < args.length; i = i + 2) {
+        let pattern = args[i];
+        let space = pattern.indexOf(' ');
+        if (space < 0) methods.push(undefined);
+        else {
+            methods.push(pattern.slice(0, space).toUpperCase);
+            pattern = pattern.slice(space + 1);
         }
-        if (request.method != m) return false;
-        pattern = parts[1];
+        let star = pattern.indexOf('*')
+        if (star < 0) { prefixes.push(pattern); suffixes.push(""); }
+        else {
+            prefixes.push(pattern.slice(0, star));
+            suffixes.push(pattern.slice(star + 1));
+        }
+        components[i] = args[i + 1];
     }
-    parts = pattern.split('*');
-    if (parts.length != 2) throw "Error: URL pattern needs a single '*'";
-    if (request.url.startsWith(parts[0]) && request.url.endsWith(parts[1])) {
-        let start = parts[0].length, end = request.url.length - parts[1].length;
-        request.suburl = request.url.substring(start, end);
-        return true;
-    }
-    return false;
+    if (args.length % 2 == 0) return undefined;
+    return args[args.length - 1];
 }
 
 // Given the name of the default index file for a directory, e.g. "index.html",
@@ -75,7 +69,7 @@ function match(pattern, request) {
 // possible codes are not replaced, so they must be translated if desired before
 // using the url as a file path.
 export function normalize(index) {
-    function normComponent(request, response) {
+    function normalizeComponent(request, response) {
         if (request.url == undefined) return;
         parameters(request);
         let u = request.url;
@@ -99,9 +93,8 @@ export function normalize(index) {
         }
         request.url = u;
     }
-    return normComponent;
+    return normalizeComponent;
 }
-
 
 // Transfer any url parameters to a request.parameters field.
 function parameters(request) {

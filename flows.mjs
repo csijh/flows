@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs from "fs";
 
 export default { chain, choose, normalize, read, write, type, deliver, log };
 

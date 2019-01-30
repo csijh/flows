@@ -1,4 +1,6 @@
-import fs from "fs";
+import oldfs from "fs";
+
+let fs = oldfs.promises;
 
 export default { chain, choose, normalize, read, write, type, deliver, log };
 
